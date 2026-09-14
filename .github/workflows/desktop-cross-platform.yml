@@ -75,7 +75,7 @@ jobs:
         # POSIX umask and Windows ACL probes and is exercised by the dedicated
         # platform CI. These installation/SSH contracts are safe on all three
         # packaging runners and must run in one process (umask is process-wide).
-        run: npm exec --workspace apps/desktop vitest run -- --project electron electron/desktop-installation.test.ts electron/ssh-connection.test.ts --pool=forks --poolOptions.forks.singleFork=true --no-file-parallelism
+        run: npm exec --workspace apps/desktop vitest run -- --project electron electron/desktop-installation.test.ts electron/ssh-connection.test.ts --pool=forks --maxWorkers=1 --minWorkers=1 --no-file-parallelism
 
       - name: Package application
         run: npm run --workspace apps/desktop ${{ matrix.script }}
