@@ -1,0 +1,140 @@
+Você vai continuar a finalização do projeto Hermes OmniRoute Studio.
+
+Repositório:
+https://github.com/LMPrado-DZ23/Hermes-OmniRoute-Studio
+
+Branch principal de trabalho:
+develop
+
+Antes de fazer qualquer alteração, leia obrigatoriamente:
+
+1. CLAUDE_HANDOFF.md
+2. AUDITORIA_2026-09-13.md
+3. .github/workflows/desktop-cross-platform.yml
+4. audit/AUTONOMOUS_MISSION_STATE.md, se existir
+
+Não repita trabalhos já concluídos. Primeiro reconcilie o estado real:
+
+git status --short --branch
+git log -10 --oneline --decorate
+git remote -v
+gh release view hermes-omniroute-v0.17.0-omniroute.6 --repo LMPrado-DZ23/Hermes-OmniRoute-Studio
+
+ESTADO CONHECIDO
+
+- O código foi auditado, corrigido e publicado.
+- O commit atual de develop é 71314d593.
+- O working tree estava limpo no último checkpoint.
+- A Release pública existe em:
+  https://github.com/LMPrado-DZ23/Hermes-OmniRoute-Studio/releases/tag/hermes-omniroute-v0.17.0-omniroute.6
+- A Release contém instaladores Windows, macOS e Linux.
+- A Release contém checksums e arquivos de proveniência por plataforma.
+- O gate local npm run check passou anteriormente.
+- O web lint e o web typecheck passaram sem warnings.
+- A matriz real do GitHub Actions confirmou preflight, testes de plataforma, empacotamento e upload dos três sistemas.
+- A Release precisou ser completada manualmente porque o job automático encontrou nomes duplicados nos arquivos SHA256SUMS.txt e BUILD-PROVENANCE.json.
+- O workflow recebeu uma correção para renomear esses arquivos por plataforma antes do upload. Verifique se essa alteração está realmente presente no branch remoto e se está correta.
+
+FASE 1 — RECONCILIAÇÃO
+
+Verifique o estado remoto e local. Não altere nada se o estado já estiver correto. Confirme:
+
+- develop sincronizado com origin/develop;
+- working tree limpo;
+- CLAUDE_HANDOFF.md presente no GitHub;
+- Release .6 pública e com os assets esperados;
+- tags existentes;
+- workflow de release válido.
+
+FASE 2 — VALIDAR A CORREÇÃO DO WORKFLOW
+
+Inspecione .github/workflows/desktop-cross-platform.yml e confirme que o job Publish GitHub Release:
+
+- usa o SHA completo da action actions/download-artifact;
+- não tenta publicar automaticamente pelo electron-builder;
+- usa --publish never nos scripts de distribuição;
+- renomeia os metadados por plataforma antes do upload;
+- usa --clobber com segurança;
+- tem permissões contents: write;
+- não possui YAML inválido;
+- não cria assets duplicados.
+
+Use, no mínimo:
+
+npx --yes prettier@3.6.2 --check .github/workflows/desktop-cross-platform.yml
+git diff --check
+
+Se houver uma correção necessária, faça a alteração de forma mínima, explique a causa, rode as validações e faça commit/push em develop.
+
+FASE 3 — VALIDAÇÃO TÉCNICA
+
+Execute, quando aplicável:
+
+npm run --workspace web lint
+npm run --workspace web typecheck
+npm audit --omit=dev
+python3 -W error::SyntaxWarning -m compileall -q agent gateway hermes_cli tools providers integrations plugins tests
+npm run check
+
+Se algum comando falhar:
+
+1. localize a causa real;
+2. não mascare o erro simplesmente desativando testes;
+3. corrija a causa raiz;
+4. execute novamente o teste específico;
+5. execute novamente o gate afetado;
+6. registre o resultado no handoff.
+
+Não refaça builds multiplataforma caros sem necessidade.
+
+FASE 4 — VALIDAÇÃO DA RELEASE
+
+Confirme que a Release possui exatamente os assets necessários:
+
+- Hermes-OmniRoute-Studio-0.17.0-omniroute.1-win-x64.exe
+- Hermes-OmniRoute-Studio-0.17.0-omniroute.1-win-x64.msi
+- Hermes-OmniRoute-Studio-0.17.0-omniroute.1-mac-arm64.dmg
+- Hermes-OmniRoute-Studio-0.17.0-omniroute.1-mac-arm64.zip
+- Hermes-OmniRoute-Studio-0.17.0-omniroute.1-linux-x86_64.AppImage
+- Hermes-OmniRoute-Studio-0.17.0-omniroute.1-linux-amd64.deb
+- Hermes-OmniRoute-Studio-0.17.0-omniroute.1-linux-x86_64.rpm
+- checksums Linux/macOS/Windows;
+- proveniência Linux/macOS/Windows.
+
+Se os hashes puderem ser verificados localmente, faça isso. Não declare assinatura, notarização ou atualização automática como validadas sem evidência real.
+
+FASE 5 — PENDÊNCIAS REAIS
+
+Depois de validar o repositório, concentre o trabalho somente no que ainda faltar:
+
+1. validar instalação e execução dos instaladores em Windows, macOS e Linux reais;
+2. validar atualização automática em instalação real;
+3. validar assinatura/notarização se certificados estiverem disponíveis;
+4. validar integrações externas com credenciais reais;
+5. decidir, sem assumir, se develop deve ser promovido para main;
+6. decidir se uma nova Release/tag é realmente necessária.
+
+Não faça merge para main, não apague tags, não faça force push e não substitua a Release .6 sem uma justificativa objetiva.
+
+REGRAS DE SEGURANÇA E QUALIDADE
+
+- Preserve o histórico Git.
+- Não exponha tokens, credenciais ou secrets.
+- Não remova testes para fazer o pipeline passar.
+- Não transforme warnings reais em silêncio sem documentar a decisão.
+- Não declare 100% finalizado se a validação manual em dispositivos ou integrações reais não tiver sido realizada.
+- Faça commits pequenos e descritivos.
+- Após qualquer alteração, valide git diff --check.
+- Antes de concluir, confirme commit remoto, branch sincronizado, working tree limpo, arquivos criados presentes, Release e assets acessíveis e limitações restantes documentadas.
+
+Ao terminar, produza um relatório final em português com:
+
+1. estado encontrado;
+2. alterações realizadas;
+3. testes executados e resultados;
+4. links de commits, branch e Release;
+5. pendências objetivas;
+6. classificação final entre:
+   - concluído;
+   - concluído com validações externas pendentes;
+   - bloqueado, explicando exatamente o bloqueio.
