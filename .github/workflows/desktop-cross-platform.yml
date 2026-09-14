@@ -179,4 +179,17 @@ jobs:
             --repo "$GITHUB_REPOSITORY" \
             --title "Hermes OmniRoute Studio $GITHUB_REF_NAME" \
             --generate-notes
-          find release-assets -type f -print0 | xargs -0 -r gh release upload "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY"
+          # Each platform emits the same metadata filenames. Flatten them with
+          # platform-qualified names so GitHub does not reject the second upload.
+          for metadata in release-assets/*/SHA256SUMS.txt release-assets/*/BUILD-PROVENANCE.json; do
+            [ -f "$metadata" ] || continue
+            artifact_dir=$(basename "$(dirname "$metadata")")
+            platform=${artifact_dir#hermes-omniroute-}
+            platform=${platform%%-*}
+            case "$(basename "$metadata")" in
+              SHA256SUMS.txt) target="release-assets/SHA256SUMS-${platform}.txt" ;;
+              BUILD-PROVENANCE.json) target="release-assets/BUILD-PROVENANCE-${platform}.json" ;;
+            esac
+            mv "$metadata" "$target"
+          done
+          find release-assets -type f -print0 | xargs -0 -r gh release upload "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --clobber
