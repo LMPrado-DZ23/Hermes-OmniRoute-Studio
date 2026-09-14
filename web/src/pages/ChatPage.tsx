@@ -1520,6 +1520,9 @@ export default function ChatPage({ isActive = true }: { isActive?: boolean }) {
     resumeParam,
     scopedProfile,
     reconnectNonce,
+    searchParams,
+    setSearchParams,
+    terminalTheme,
   ]);
 
   // NS-434 follow-up: attach the visualViewport keyboard-inset listeners
