@@ -46,6 +46,7 @@ export function visibleTabs(content: PanelContent): ContextTab[] {
     [ContextTab.CONTEXT]: content.hasProject,
     [ContextTab.TOOLS]: content.activeToolCount > 0
   }
+
   return TAB_ORDER.filter(tab => present[tab])
 }
 
@@ -55,6 +56,7 @@ export function resolveActiveTab(previous: ContextTab | null, visible: ContextTa
   if (previous && visible.includes(previous)) {
     return previous
   }
+
   return visible[0] ?? null
 }
 
@@ -77,9 +79,11 @@ export function deriveContextSecurity(cfg: SecurityConfigView): ContextSecurity 
   if (cfg.localOnly) {
     return ContextSecurity.LOCAL_ONLY
   }
+
   if (cfg.redactBeforeCloud) {
     return ContextSecurity.REDACTED
   }
+
   return ContextSecurity.CLOUD_ALLOWED
 }
 

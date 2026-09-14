@@ -119,16 +119,16 @@ describe('reconcileBackgroundProcesses', () => {
     expect(itemsOf('sess-clear')).toEqual([])
   })
 
-  it('self-clears a failed task too, but only after a longer linger', () => {
+  it('keeps a failed task visible until dismiss or registry prune', () => {
     reconcileBackgroundProcesses('sess-fail', [exited('a', 1)])
 
-    // Still visible after the success window — the failure gets a longer one so
-    // its exit code stays readable.
+    // Failed tasks do not auto-dismiss: the exit code remains readable until
+    // the user dismisses it or the registry prunes the process.
     vi.advanceTimersByTime(5_000)
     expect(itemsOf('sess-fail').map(i => [i.id, i.state])).toEqual([['a', 'failed']])
 
     vi.advanceTimersByTime(10_000)
-    expect(itemsOf('sess-fail')).toEqual([])
+    expect(itemsOf('sess-fail').map(i => [i.id, i.state])).toEqual([['a', 'failed']])
   })
 
   it('never self-clears a still-running task', () => {

@@ -171,3 +171,54 @@ Trabalho device/backend restante do U1 entregue como prompts prontos em
 `audit/WORKSPACE_U1_FINALIZATION_REPORT.md` (§"KNOWN LIMITATIONS") e
 `audit/OPENWA_DEVICE_EXECUTOR_PROMPTS.md`. RAPTOR e OpenWA intactos; nenhuma
 integração existente foi tocada pela mudança de U1 (só a sidebar + i18n).
+
+
+# Missão de finalização e publicação — 2026-09-14
+
+- mission_id: Q6IzPZauxMP6XmbAqCMVvG-finalize-2026-09-14
+- objective: Corrigir os achados técnicos reproduzíveis da auditoria, validar o projeto e publicar o estado verificável no repositório GitHub autorizado.
+- acceptance_criteria:
+  - advisories de produção corrigidos ou documentados com evidência;
+  - `npm run check` verde nos workspaces aplicáveis;
+  - `npm audit --omit=dev` sem vulnerabilidades não justificadas;
+  - SyntaxWarnings identificados corrigidos e gate Python executável;
+  - testes focados, testes JS, typecheck e builds relevantes executados;
+  - auditoria final independente registrada;
+  - commit publicado em `origin/develop` e verificado remotamente;
+  - limitações de runtime Windows registradas honestamente se não executáveis neste ambiente.
+- state: PLANNING
+- iteration: 1
+- started_at: 2026-09-14T01:26:49-03:00
+- heartbeat_at: 2026-09-14T01:26:54-03:00
+- last_progress_at: 2026-09-14T01:26:54-03:00
+- current_task: Inspecionar superfícies afetadas e selecionar correções de causa-raiz.
+- completed_tasks: Auditoria base revisada; clone reconciliado; integração GitHub habilitada; estado inicial confirmado.
+- pending_tasks: Dependências; lint React; SyntaxWarnings/gate; testes e builds; auditoria final; commit/push/verificação.
+- blockers: Runtime Windows/instaladores nativos não executáveis no sandbox Linux; sem bloqueio para código-fonte, testes e publicação autorizada.
+- attempt_count: 0
+- same_failure_count: 0
+- current_failure: none
+- current_strategy: Corrigir em pequenos lotes verificáveis, preservando histórico e sem force push.
+- modified_files: [audit/AUTONOMOUS_MISSION_STATE.md]
+- tests_run: Baseline: compileall, 145 testes direcionados, 14 testes metadata/packaging, JS typecheck/Vitest.
+- results: Baseline: testes focados passam; npm check falha por 26 warnings; npm audit reporta colord e sanitize-html; npm ci exige Node >=22.22.0.
+- commits: []
+- artifacts: [AUDITORIA_2026-09-13.md]
+- delegated_agents: []
+- audits: Auditoria técnica inicial concluída; auditoria final independente pendente.
+- next_action: Inspecionar manifests, overrides, configuração ESLint e arquivos com warnings.
+- resume_instructions: Ler este bloco, reconciliar com git status/HEAD e continuar pela menor tarefa pendente. Não executar force push nem apagar histórico.
+
+
+## Checkpoint — 2026-09-14 02:11 BRT
+
+- O gate agregado executou todos os testes até `test:desktop:all`; os testes passaram: desktop UI 5.460, desktop platform 1.667, TUI 1.705, web 365 e testes JS 24.
+- A falha restante foi preventiva e esperada: `write-build-stamp.mjs` recusa release build quando o working tree tem alterações não commitadas. O próximo passo correto é commitar as alterações revisadas e então repetir o gate.
+- `npm audit --omit=dev` está limpo (0 vulnerabilidades), a compilação Python estrita está limpa e `git diff --check` está limpo.
+- O teste de publish foi alinhado ao metadata real do fork (`lmpradodz23-design/Hermes-OmniRoute-Studio`) e passou 4/4.
+- Próximo gate: commit das alterações revisadas, executar novamente `npm run check`, verificar o diff final e publicar no GitHub.
+
+
+## Release gate — 2026-09-14 02:30 BRT
+
+O `npm run check` completo passou com exit code 0 após a instalação do toolchain nativo (`build-essential`). A execução incluiu typechecks, testes e lint dos workspaces, os testes de plataforma/UI/Electron, o build/pack desktop com reconstrução nativa de `get-windows` e `node-pty`, os testes TUI, web e JS. Warnings não bloqueantes do React ESLint permanecem registrados no log, mas não há erros de lint nem testes falhos. O commit está pronto para publicação em `origin/develop`.

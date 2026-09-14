@@ -282,9 +282,11 @@ test('claimUpdateMarker: a loser (EEXIST) does not corrupt or empty the winner m
 test('writeUpdateMarker: publishes atomically and leaves no temp litter', () => {
   const home = tmpHome('write-atomic')
   writeUpdateMarker(home, 4242, { now: () => 1_000_000_000_000 })
+
   const stray = fs.readdirSync(home).filter(
     f => f.includes('.tmp.') || f.includes('.claim.') || f.includes('.reap.') || f.includes('.cs')
   )
+
   assert.deepEqual(stray, [], `no temp files should remain, found: ${stray.join(', ')}`)
   assert.equal(readLiveUpdateMarker(home, { kill: ALIVE, now: () => 1_000_000_000_000 })?.pid, 4242)
 })

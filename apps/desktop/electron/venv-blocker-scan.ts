@@ -63,19 +63,25 @@ export function classifyProbeError(err: any): { kind: ProbeFailureKind; detail: 
   if (err && err.killed === true && (err.signal === 'SIGTERM' || err.signal === 'SIGKILL' || err.code == null)) {
     return { kind: 'timeout', detail: 'scan timed out — venv likely held by a Hermes process (e.g. the gateway)' }
   }
+
   const code = err ? err.code : undefined
+
   if (code === 'ENOENT') {
     return { kind: 'spawn_failed', detail: 'could not launch the venv python' }
   }
+
   if (code === 'EACCES' || code === 'EPERM') {
     return { kind: 'access_denied', detail: 'permission denied launching the venv python' }
   }
+
   if (typeof code === 'number' && Number.isFinite(code)) {
     return { kind: 'nonzero_exit', detail: `venv python exited ${code}` }
   }
+
   if (typeof err?.status === 'number' && Number.isFinite(err.status)) {
     return { kind: 'nonzero_exit', detail: `venv python exited ${err.status}` }
   }
+
   return { kind: 'unknown', detail: `exit code ${err?.status ?? err?.code ?? -1}` }
 }
 

@@ -26,6 +26,7 @@ export interface MemoryAffordances {
  *  - Forget só quando suportado E há algo a esquecer. */
 export function memoryAffordances(state: MemoryInlineState): MemoryAffordances {
   const count = Math.max(0, Math.floor(state.rememberedCount || 0))
+
   return {
     showEnabledIndicator: state.enabled,
     showRememberedCount: state.enabled && count > 0,

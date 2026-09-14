@@ -6,6 +6,7 @@
   "description": "Wrapper Capacitor do cliente web do Hermes. Nao contem interface propria — a interface e web/, empacotada.",
   "scripts": {
     "build:web": "npm --prefix ../../web run build",
+    "check": "npm run build:web",
     "sync": "npm run build:web && cap sync android",
     "open": "cap open android",
     "add:android": "cap add android",

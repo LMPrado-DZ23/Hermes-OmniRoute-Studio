@@ -42,14 +42,17 @@ export interface AgentDraftError {
 export function validateAgentDraft(draft: AgentDraft): AgentDraftError[] {
   const errors: AgentDraftError[] = []
   const name = (draft.name || '').trim()
+
   if (!name) {
     errors.push({ field: 'name', message: 'nome obrigatório' })
   } else if (name.length > MAX_AGENT_NAME) {
     errors.push({ field: 'name', message: `nome acima de ${MAX_AGENT_NAME}` })
   }
+
   if ((draft.instructions || '').length > MAX_AGENT_INSTRUCTIONS) {
     errors.push({ field: 'instructions', message: 'instruções muito longas' })
   }
+
   return errors
 }
 
@@ -66,17 +69,21 @@ export function decideAgentAction(action: AgentActionKind, ctx: AgentActionConte
   if (READ_ONLY_ACTIONS.has(action)) {
     return AgentActionDecision.ALLOW
   }
+
   if ((action === AgentActionKind.CREATE || action === AgentActionKind.EDIT) && ctx.draft) {
     if (validateAgentDraft(ctx.draft).length > 0) {
       return AgentActionDecision.INVALID
     }
   }
+
   if (!ctx.capabilityGranted) {
     return AgentActionDecision.DENIED_CAPABILITY
   }
+
   if (!ctx.hasGateway) {
     return AgentActionDecision.BLOCKED_GATEWAY
   }
+
   return AgentActionDecision.ALLOW
 }
 

@@ -1,4 +1,4 @@
-"""Regression tests for #68773 — MEDIA tags without a separator merge paths.
+r"""Regression tests for #68773 — MEDIA tags without a separator merge paths.
 
 Before the fix, ``MEDIA_EXTENSIONLESS_TAG_RE`` used a greedy character class
 ``[^\s\n`\"']+`` that would silently absorb the next ``MEDIA:`` keyword when
@@ -18,7 +18,7 @@ from gateway.platforms.base import (
 
 
 def test_known_extension_regex_splits_glued_tags():
-    """``MEDIA_TAG_CLEANUP_RE`` must stop at the next ``MEDIA:`` keyword (#68773).
+    r"""``MEDIA_TAG_CLEANUP_RE`` must stop at the next ``MEDIA:`` keyword (#68773).
 
     Previously the primary regex used greedy ``\S+`` in the path class,
     so two tags glued together (``MEDIA:/a.pngMEDIA:/b.png``) merged into
@@ -43,5 +43,3 @@ def test_strip_media_directives_handles_glued_known_extension_tags(tmp_path):
     cleaned = _strip_media_tag_directives(text)
     # Both MEDIA: tokens consumed; the leading MEDIA: prefix is gone.
     assert "MEDIA:" not in cleaned, f"Greedy merge leaked: {cleaned!r}"
-
-

@@ -95,6 +95,7 @@ export function readLiveUpdateMarker(
     } catch {
       mtimeAtRead = -1
     }
+
     raw = fs.readFileSync(file, 'utf8')
   } catch {
     return null // absent or unreadable => no live update
@@ -265,16 +266,19 @@ function claimCsOwnerPath(file) {
 function reapStaleClaimCs(file, pid) {
   const csDir = claimCsDir(file)
   const grave = `${csDir}.reap.${pid}.${Date.now()}.${csTokenCounter++}`
+
   try {
     fs.renameSync(csDir, grave) // atomic dir rename; exactly one reaper wins
   } catch {
     return // lost the reap race (ENOENT) — someone else handled it
   }
+
   try {
     fs.unlinkSync(path.join(grave, 'owner'))
   } catch {
     void 0
   }
+
   try {
     fs.rmdirSync(grave)
   } catch {
@@ -303,6 +307,7 @@ function enterClaimCs(file, pid): string | null {
 
   for (;;) {
     let made = false
+
     try {
       fs.mkdirSync(csDir) // atomic exclusive create on POSIX and NTFS
       made = true
@@ -332,6 +337,7 @@ function enterClaimCs(file, pid): string | null {
 
     // CS is held. Reap it only if it is abandoned (older than the TTL).
     let ageMs = 0
+
     try {
       ageMs = now() - fs.statSync(csDir).mtimeMs
     } catch {
@@ -340,6 +346,7 @@ function enterClaimCs(file, pid): string | null {
 
     if (ageMs > CLAIM_CS_TTL_MS) {
       reapStaleClaimCs(file, pid)
+
       continue
     }
 
@@ -355,6 +362,7 @@ let csTokenCounter = 0
 
 function spinBriefly() {
   const until = Date.now() + 1
+
   while (Date.now() < until) {
     // busy-wait ~1ms; the CS holder finishes in microseconds
   }
@@ -364,6 +372,7 @@ function spinBriefly() {
  * delete a reaper's fresh CS. Removes the owner file, then the directory. */
 function exitClaimCs(file, token: string) {
   const owner = claimCsOwnerPath(file)
+
   try {
     if (fs.readFileSync(owner, 'utf8') !== token) {
       return // not ours (reaped/handed off) — leave it
@@ -371,11 +380,13 @@ function exitClaimCs(file, token: string) {
   } catch {
     return // owner file gone → nothing of ours to release
   }
+
   try {
     fs.unlinkSync(owner)
   } catch {
     void 0
   }
+
   try {
     fs.rmdirSync(claimCsDir(file))
   } catch {
@@ -418,10 +429,12 @@ export function claimUpdateMarker(
 ): { acquired: boolean; owner?: { pid: number; ageMs: number } } {
   const file = markerPath(hermesHome)
   const nowMs = now()
+
   const acquiredAt =
     typeof startedAt === 'number' && Number.isInteger(startedAt) ? startedAt : Math.floor(nowMs / 1000)
 
   const token = enterClaimCs(file, pid)
+
   if (token === null) {
     return { acquired: false } // could not serialize → fail closed
   }
@@ -437,6 +450,7 @@ export function claimUpdateMarker(
     // claimant can interleave, so a plain atomic replace is safe and there is no
     // unlink-by-path to race.
     const tmp = `${file}.claim.${pid}.${nowMs}`
+
     try {
       fs.writeFileSync(tmp, `${pid}\n${acquiredAt}\n`, 'utf8')
       fs.renameSync(tmp, file) // atomic replace of an absent/stale marker
@@ -466,17 +480,22 @@ export function claimUpdateMarker(
 export function releaseUpdateMarker(hermesHome, pid): boolean {
   const file = markerPath(hermesHome)
   let raw
+
   try {
     raw = fs.readFileSync(file, 'utf8')
   } catch {
     return false // nothing to release
   }
+
   const ownerPid = Number.parseInt((String(raw).split('\n')[0] || '').trim(), 10)
+
   if (ownerPid !== pid) {
     return false // not ours (handed off, or someone else) — leave it
   }
+
   try {
     fs.unlinkSync(file)
+
     return true
   } catch {
     return false

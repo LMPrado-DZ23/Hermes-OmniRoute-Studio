@@ -43,16 +43,20 @@ const MUTATING_COMMANDS = [
 
 const loadCommandRegistryNames = (): CommandRegistryLoad => {
   const here = dirname(fileURLToPath(import.meta.url))
+  const repoRoot = resolve(here, '../../..')
+  const projectPython = process.platform === 'win32'
+    ? resolve(repoRoot, '.venv', 'Scripts', 'python.exe')
+    : resolve(repoRoot, '.venv', 'bin', 'python')
 
   try {
     const names = JSON.parse(
       execFileSync(
-        process.env.PYTHON ?? 'python3',
+        process.env.PYTHON ?? projectPython,
         [
           '-c',
           'import json; from hermes_cli.commands import COMMAND_REGISTRY; print(json.dumps([c.name for c in COMMAND_REGISTRY]))'
         ],
-        { cwd: resolve(here, '../../..'), encoding: 'utf8' }
+        { cwd: repoRoot, encoding: 'utf8' }
       )
     ) as string[]
 

@@ -42,6 +42,7 @@ describe('visibleTabs', () => {
       hasProject: true,
       activeToolCount: 1
     })
+
     expect(tabs).toHaveLength(6)
   })
 })
@@ -94,6 +95,7 @@ describe('deriveContextSnapshot', () => {
       model: 'claude-opus',
       security: { localOnly: true, redactBeforeCloud: false }
     })
+
     expect(snap.project).toBe('hermes')
     expect(snap.goalTitle).toBe('Ship U1')
     expect(snap.security).toBe(ContextSecurity.LOCAL_ONLY)

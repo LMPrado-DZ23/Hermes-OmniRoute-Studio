@@ -124,16 +124,19 @@ describe('estrutura do arquivo de overrides', () => {
         } else if (char === inString) {
           inString = null
         }
+
         continue
       }
 
       if (char === "'" || char === '"' || char === '`') {
         inString = char
+
         continue
       }
 
       if (char === '}') {
         stack.pop()
+
         continue
       }
 
@@ -147,6 +150,7 @@ describe('estrutura do arquivo de overrides', () => {
 
       if (!name) {
         stack.push('?')
+
         continue
       }
 

@@ -28,19 +28,23 @@ const CONTROL_CHARS = /[\u0000-\u001F\u007F]/g
 export function sanitizeText(value: unknown, max = MAX_FINDING_TEXT): string {
   const raw = typeof value === 'string' ? value : String(value ?? '')
   const stripped = raw.replace(CONTROL_CHARS, '')
+
   return stripped.length > max ? stripped.slice(0, max) : stripped
 }
 
 function asEnum<T extends Record<string, string>>(e: T, value: unknown, fallback: T[keyof T]): T[keyof T] {
   const v = typeof value === 'string' ? value : ''
+
   return (Object.values(e) as string[]).includes(v) ? (v as T[keyof T]) : fallback
 }
 
 function asLine(value: unknown): number {
   const n = typeof value === 'number' ? value : Number(value)
+
   if (!Number.isFinite(n) || n < 0) {
     return 0
   }
+
   return Math.min(Math.floor(n), 2_000_000_000)
 }
 
@@ -49,11 +53,14 @@ export function validateFinding(raw: unknown): Finding {
   if (typeof raw !== 'object' || raw === null) {
     throw new SecurityDataError('finding não é um objeto')
   }
+
   const r = raw as Record<string, unknown>
   const id = sanitizeText(r.id, 256)
+
   if (!id) {
     throw new SecurityDataError('finding sem id')
   }
+
   return {
     id,
     ruleId: sanitizeText(r.ruleId ?? r.rule_id, 256),
@@ -72,12 +79,15 @@ export function validateFindings(raw: unknown): Finding[] {
   if (!Array.isArray(raw)) {
     throw new SecurityDataError('findings não é uma lista')
   }
+
   const capped = raw.slice(0, MAX_FINDINGS)
   const out: Finding[] = []
   const seen = new Set<string>()
+
   for (const item of capped) {
     try {
       const f = validateFinding(item)
+
       if (!seen.has(f.id)) {
         seen.add(f.id)
         out.push(f)
@@ -86,6 +96,7 @@ export function validateFindings(raw: unknown): Finding[] {
       // um finding hostil malformado é descartado, não derruba a lista inteira
     }
   }
+
   return out
 }
 
@@ -93,25 +104,31 @@ export function validateReport(raw: unknown): SecurityReport {
   if (typeof raw !== 'object' || raw === null) {
     throw new SecurityDataError('report não é um objeto')
   }
+
   const r = raw as Record<string, unknown>
   const runId = sanitizeText(r.runId ?? r.run_id, 256)
+
   if (!runId) {
     throw new SecurityDataError('report sem runId')
   }
+
   const format = r.format === 'sarif' ? 'sarif' : 'markdown'
   const rawContent = typeof r.content === 'string' ? r.content : ''
   const bytes = Buffer.byteLength(rawContent, 'utf8')
   const truncated = bytes > MAX_REPORT_BYTES || r.truncated === true
   // corta por bytes (aprox. por chars quando estourar) para não estourar memória
   const content = bytes > MAX_REPORT_BYTES ? rawContent.slice(0, MAX_REPORT_BYTES) : rawContent
+
   return { runId, format, content, truncated }
 }
 
 /** Status vindo do transporte precisa ser um RunStatus conhecido. */
 export function validateStatus(value: unknown): RunStatus {
   const v = typeof value === 'string' ? value : ''
+
   if (!(Object.values(RunStatus) as string[]).includes(v)) {
     throw new SecurityDataError(`status inválido do transporte: ${JSON.stringify(value)}`)
   }
+
   return v as RunStatus
 }

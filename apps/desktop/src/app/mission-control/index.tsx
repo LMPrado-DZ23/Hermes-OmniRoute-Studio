@@ -122,6 +122,7 @@ export function MissionControlPane({ onOpenSession }: MissionControlPaneProps) {
 
   const refresh = async () => {
     setRefreshing(true)
+
     try {
       await refreshAllBackgroundProcesses()
       // As sessões conhecidas também são reconsultadas: um gateway antigo sem

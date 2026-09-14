@@ -323,12 +323,21 @@ import {
   windowOpacityFor
 } from './translucency'
 import {
+  type BackoffState,
+  INITIAL_BACKOFF_STATE,
+  parseBackoffState,
+  recordUpdateFailure,
+  recordUpdateSuccess,
+  serializeBackoffState
+} from './update-backoff'
+import {
   compareApiUrl,
   parseCompareBehindCount,
   resolveBehindCount,
   resolveCommitLogSelection,
   shouldCountCommits
 } from './update-count'
+import { collectInstallState, decideUpdateGate, GateAction } from './update-decision'
 import { waitForUpdateClearance } from './update-gate'
 import {
   claimUpdateMarker,
@@ -337,16 +346,6 @@ import {
   writeUpdateMarker
 } from './update-marker'
 import { canonicalGitHubRemote, isOfficialSshRemote, OFFICIAL_REPO_CANONICAL, OFFICIAL_REPO_HTTPS_URL } from './update-remote'
-import { UpdatePolicy } from './update-policy'
-import { collectInstallState, decideUpdateGate, GateAction } from './update-decision'
-import {
-  type BackoffState,
-  INITIAL_BACKOFF_STATE,
-  parseBackoffState,
-  recordUpdateFailure,
-  recordUpdateSuccess,
-  serializeBackoffState
-} from './update-backoff'
 import {
   collectRelaunchArgs,
   observeUpdaterHandoff,
@@ -879,6 +878,7 @@ function writeUpdateBackoffState(state: BackoffState): void {
     rememberLog(`[updates] could not persist update backoff state: ${(err as Error).message}`)
   }
 }
+
 const DESKTOP_WINDOW_STATE_PATH = path.join(app.getPath('userData'), 'window-state.json')
 const DESKTOP_BACKEND_OWNERSHIP_PATH = path.join(app.getPath('userData'), 'backend-ownership.json')
 // active-profile.json records which Hermes profile the desktop launches its
@@ -3634,11 +3634,14 @@ async function applyUpdates(opts: { stopSafeBlockers?: boolean; force?: boolean 
         // gate block; other callers keep the resolve-with-code contract.
         const git = async (args: string[]): Promise<string> => {
           const r = await runGit(args, { cwd: guardRoot })
+
           if (r.code !== 0) {
             throw new Error(`git ${args.join(' ')} exited ${r.code}`)
           }
+
           return r.stdout.trim()
         }
+
         const { branch: updateBranch } = readDesktopUpdateConfig()
 
         // Unknown != safe. Any failed read of a divergence-deciding dimension
@@ -3659,6 +3662,7 @@ async function applyUpdates(opts: { stopSafeBlockers?: boolean; force?: boolean 
               `(unknown is treated as unsafe): ${collected.reason}. Starting backend normally; the runtime was not touched.`
           )
           startHermes().catch(() => {})
+
           return {
             ok: false,
             error: 'update-state-unknown',
@@ -3680,6 +3684,7 @@ async function applyUpdates(opts: { stopSafeBlockers?: boolean; force?: boolean 
               : gate.action === GateAction.SKIP_BACKOFF
                 ? 'update backoff active after a prior failure'
                 : 'already up to date'
+
           rememberLog(
             `[updates] auto-update SKIPPED — ${label} (${gate.reasons.join('; ') || gate.action}). ` +
               'Starting backend normally; the runtime was not touched.'
@@ -3710,6 +3715,7 @@ async function applyUpdates(opts: { stopSafeBlockers?: boolean; force?: boolean 
         `[updates] update-gate check errored — SKIPPING update (fail-safe, runtime untouched): ${(err as Error).message}`
       )
       startHermes().catch(() => {})
+
       return { ok: false, error: 'update-gate-error', skipped: 'skip-gate-error' }
     }
   }
@@ -3799,6 +3805,7 @@ async function applyUpdates(opts: { stopSafeBlockers?: boolean; force?: boolean 
         claim.owner && claim.owner.pid > 0
           ? `An update is already running (PID ${claim.owner.pid}). Wait for it to finish, then try again.`
           : 'Another update is already starting. Try again in a moment.'
+
       rememberLog(`[updates] refusing hand-off (atomic claim not acquired): ${message}`)
       emitUpdateProgress({ stage: 'error', message, percent: null })
 
@@ -4053,6 +4060,7 @@ async function applyUpdates(opts: { stopSafeBlockers?: boolean; force?: boolean 
     )
 
     handedOff = true
+
     return { ok: true, handedOff: true, updater }
   } catch (err) {
     // (release of our atomic claim happens in the finally below)
@@ -4063,6 +4071,7 @@ async function applyUpdates(opts: { stopSafeBlockers?: boolean; force?: boolean 
     // the backend (idempotent if it is still alive). The recognized failure paths
     // above return before reaching here; this only catches the unexpected.
     rememberLog(`[updates] applyUpdates threw — failing safe (restart backend + backoff): ${(err as Error).message}`)
+
     try {
       writeUpdateBackoffState(
         recordUpdateFailure(readUpdateBackoffState(), Date.now(), `applyUpdates-threw: ${(err as Error).message}`, 'failed')
@@ -4070,7 +4079,9 @@ async function applyUpdates(opts: { stopSafeBlockers?: boolean; force?: boolean 
     } catch {
       // never let backoff persistence failure mask the recovery
     }
+
     startHermes().catch(() => {})
+
     return { ok: false, error: 'update-exception', message: (err as Error).message }
   } finally {
     // Release our atomic claim on FAILURE paths only (never on a successful
@@ -4083,6 +4094,7 @@ async function applyUpdates(opts: { stopSafeBlockers?: boolean; force?: boolean 
     if (!handedOff) {
       releaseUpdateMarker(HERMES_HOME, process.pid)
     }
+
     updateInFlight = false
   }
 }
@@ -4360,6 +4372,7 @@ async function applyUpdatesPosixHandoff(opts: any) {
       claim.owner && claim.owner.pid > 0
         ? `An update is already running (PID ${claim.owner.pid}). Wait for it to finish, then try again.`
         : 'Another update is already starting. Try again in a moment.'
+
     rememberLog(`[updates] refusing posix hand-off (atomic claim not acquired): ${message}`)
     emitUpdateProgress({ stage: 'error', message, percent: null })
 

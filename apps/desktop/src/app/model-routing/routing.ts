@@ -29,10 +29,13 @@ const LOCAL_PROVIDERS: ReadonlySet<string> = new Set(['ollama', 'lmstudio', 'lm-
 
 export function isLocalProvider(provider: string, baseUrl = ''): boolean {
   const p = (provider || '').trim().toLowerCase()
+
   if (LOCAL_PROVIDERS.has(p)) {
     return true
   }
+
   const url = (baseUrl || '').trim().toLowerCase()
+
   return /(^|\/\/)(localhost|127\.0\.0\.1|\[::1\])(:|\/|$)/.test(url)
 }
 
@@ -68,27 +71,35 @@ export function deriveRoutingLabel(status: RoutingStatus): RoutingLabel {
   if (status.kind === RoutingStatusKind.BLOCKED_LOCAL_ONLY || (status.localOnly && status.selectedProvider && !local)) {
     return { prefix: 'Bloqueado', target: status.selectedProvider || status.requestedModel, blocked: true }
   }
+
   if (status.kind === RoutingStatusKind.UNAVAILABLE) {
     return { prefix: 'Indisponível', target: '', blocked: true }
   }
+
   if (status.kind === RoutingStatusKind.PENDING || !status.selectedModel) {
     const prefix = status.requestedMode === RoutingMode.AUTO ? 'Auto' : 'Manual'
+
     return { prefix, target: '', blocked: false }
   }
 
   const target = local ? status.selectedModel : `${prettyProvider(status.selectedProvider)} ${status.selectedModel}`.trim()
+
   if (status.fallbackUsed || status.kind === RoutingStatusKind.FALLBACK) {
     return { prefix: 'Fallback', target, blocked: false }
   }
+
   if (local) {
     return { prefix: 'Local', target: status.selectedModel, blocked: false }
   }
+
   const prefix = status.requestedMode === RoutingMode.AUTO ? 'Auto' : 'Manual'
+
   return { prefix, target, blocked: false }
 }
 
 function prettyProvider(provider: string): string {
   const p = (provider || '').trim()
+
   const map: Record<string, string> = {
     anthropic: 'Claude',
     openai: 'OpenAI',
@@ -97,6 +108,7 @@ function prettyProvider(provider: string): string {
     mistral: 'Mistral',
     groq: 'Groq'
   }
+
   return map[p.toLowerCase()] ?? p
 }
 

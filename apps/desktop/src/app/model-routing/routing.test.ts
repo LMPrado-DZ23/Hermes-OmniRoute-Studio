@@ -5,8 +5,8 @@ import {
   isLocalProvider,
   RoutingMode,
   type RoutingStatus,
-  type RoutingStatusTransport,
-  RoutingStatusKind
+  RoutingStatusKind,
+  type RoutingStatusTransport
 } from './routing'
 
 function status(over: Partial<RoutingStatus>): RoutingStatus {
@@ -84,6 +84,7 @@ describe('contract (fake transport — not proof of real gateway)', () => {
     const fake: RoutingStatusTransport = {
       getRoutingStatus: async () => status({ selectionReason: 'from gateway' })
     }
+
     const s = await fake.getRoutingStatus('sess-1')
     expect(deriveRoutingLabel(s).prefix).toBe('Auto')
     expect(s.selectionReason).toBe('from gateway')

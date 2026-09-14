@@ -26,10 +26,13 @@ export function deriveGoalTitle(taskText: string): string {
     .split('\n')
     .map(l => l.trim())
     .find(l => l.length > 0)
+
   if (!firstLine) {
     return ''
   }
+
   const clean = firstLine.replace(/\s+/g, ' ')
+
   return clean.length > MAX_GOAL_TITLE ? clean.slice(0, MAX_GOAL_TITLE) : clean
 }
 
@@ -37,9 +40,11 @@ export function deriveGoalTitle(taskText: string): string {
  *  agente já usa (⊙ Goal set) — não um caminho paralelo. */
 export function buildGoalInstruction(draft: GoalDraft): string | null {
   const title = deriveGoalTitle(draft.title)
+
   if (!title) {
     return null
   }
+
   return `Set a goal for this task: ${title}`
 }
 
@@ -55,6 +60,7 @@ export function canGoalTransition(from: GoalStatus, to: GoalStatus): boolean {
   if (from === to) {
     return true
   }
+
   return ALLOWED[from]?.has(to) ?? false
 }
 

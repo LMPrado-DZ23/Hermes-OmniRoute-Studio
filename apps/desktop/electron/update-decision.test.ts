@@ -8,7 +8,7 @@ import {
   serializeBackoffState
 } from './update-backoff'
 import { collectInstallState, decideUpdateGate, GateAction, type InstallStateProbe } from './update-decision'
-import { resolveUpdatePolicy, UpdatePolicy, type InstallState } from './update-policy'
+import { type InstallState, resolveUpdatePolicy, UpdatePolicy } from './update-policy'
 
 // A fake git for the collector: map argv-joined command → value, or an Error to
 // simulate a non-zero exit / spawn failure.
@@ -20,12 +20,16 @@ function makeProbe(
     git: async (args: string[]) => {
       const key = args.join(' ')
       const v = responses[key]
-      if (v instanceof Error) throw v
-      if (v === undefined) throw new Error(`unexpected git ${key}`)
+
+      if (v instanceof Error) {throw v}
+
+      if (v === undefined) {throw new Error(`unexpected git ${key}`)}
+
       return v
     },
     originUrl: async () => {
-      if (opts.origin instanceof Error) throw opts.origin
+      if (opts.origin instanceof Error) {throw opts.origin}
+
       return opts.origin ?? 'https://github.com/NousResearch/hermes-agent.git'
     },
     isOfficialUpstream: () => opts.official ?? true,
@@ -44,7 +48,8 @@ describe('collectInstallState — UNKNOWN != SAFE (git-failure matrix, §5.2A)',
   it('happy path returns a usable InstallState', async () => {
     const r = await collectInstallState(makeProbe({ ...OK_READS }))
     expect(r.ok).toBe(true)
-    if (r.ok) expect(r.state.currentBranch).toBe('main')
+
+    if (r.ok) {expect(r.state.currentBranch).toBe('main')}
   })
 
   it('git unavailable (rev-parse rejects) → !ok', async () => {
@@ -71,6 +76,7 @@ describe('collectInstallState — UNKNOWN != SAFE (git-failure matrix, §5.2A)',
     const r = await collectInstallState(
       makeProbe({ ...OK_READS, 'rev-list origin/main..HEAD --count': new Error("fatal: bad revision 'origin/main..HEAD'") })
     )
+
     expect(r.ok).toBe(false)
   })
 
@@ -82,13 +88,15 @@ describe('collectInstallState — UNKNOWN != SAFE (git-failure matrix, §5.2A)',
   it('detached HEAD (branch="HEAD") → ok but policy is MANUAL', async () => {
     const r = await collectInstallState(makeProbe({ ...OK_READS, 'rev-parse --abbrev-ref HEAD': 'HEAD' }))
     expect(r.ok).toBe(true)
-    if (r.ok) expect(resolveUpdatePolicy(r.state).policy).toBe(UpdatePolicy.MANUAL_REQUIRED)
+
+    if (r.ok) {expect(resolveUpdatePolicy(r.state).policy).toBe(UpdatePolicy.MANUAL_REQUIRED)}
   })
 
   it('behind read failing is SAFE → behind=null, still ok (available)', async () => {
     const r = await collectInstallState(makeProbe({ ...OK_READS, 'rev-list HEAD..origin/main --count': new Error('stale') }))
     expect(r.ok).toBe(true)
-    if (r.ok) expect(r.state.behind).toBeNull()
+
+    if (r.ok) {expect(r.state.behind).toBeNull()}
   })
 
   it('CANARY: any failed critical read must make collect !ok (never a benign default)', async () => {
@@ -140,6 +148,7 @@ describe('decideUpdateGate — the wired orchestration path (P0)', () => {
       now: bootTime1,
       force: false
     })
+
     expect(gate1.proceed).toBe(true) // it would attempt
 
     const afterFailure = recordUpdateFailure(INITIAL_BACKOFF_STATE, bootTime1, 'venv-probe-timeout', 'failed')
@@ -148,6 +157,7 @@ describe('decideUpdateGate — the wired orchestration path (P0)', () => {
     // Hermes closes and reopens. boot 2 loads the persisted backoff.
     const reloaded = parseBackoffState(persisted)
     const bootTime2 = bootTime1 + 60_000 // a minute later
+
     const gate2 = decideUpdateGate({
       installState: OFFICIAL, // still "behind" — update still "available"
       backoffState: reloaded,

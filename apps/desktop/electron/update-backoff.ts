@@ -49,6 +49,7 @@ export function shouldAttemptUpdate(state: BackoffState, now: number): AttemptDe
       reason: `em backoff após ${state.retryCount} falha(s): ${state.lastFailureReason || state.lastResult || 'desconhecido'}`
     }
   }
+
   return { attempt: true, waitMs: 0, reason: 'sem backoff ativo' }
 }
 
@@ -60,6 +61,7 @@ export function computeBackoffMs(
 ): number {
   const n = Math.max(1, Math.floor(retryCount))
   const raw = base * 2 ** (n - 1)
+
   return Math.min(max, raw)
 }
 
@@ -73,6 +75,7 @@ export function recordUpdateFailure(
 ): BackoffState {
   const retryCount = Math.max(0, Math.floor(state.retryCount)) + 1
   const backoffMs = computeBackoffMs(retryCount, opts.base, opts.max)
+
   return {
     lastResult: result,
     lastAttemptAt: now,
@@ -98,6 +101,7 @@ function corruptBackoffState(now: number): BackoffState {
   if (!(now > 0)) {
     return { ...INITIAL_BACKOFF_STATE }
   }
+
   return recordUpdateFailure({ ...INITIAL_BACKOFF_STATE }, now, 'corrupt-backoff-file', 'failed')
 }
 
@@ -112,23 +116,30 @@ export function parseBackoffState(raw: string | null | undefined, now = 0): Back
   if (!raw) {
     return { ...INITIAL_BACKOFF_STATE }
   }
+
   let obj: any
+
   try {
     obj = JSON.parse(raw)
   } catch {
     return corruptBackoffState(now)
   }
+
   if (!obj || typeof obj !== 'object') {
     return corruptBackoffState(now)
   }
+
   const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : 0)
+
   // Bound an absurd FUTURE backoffUntil (a corrupt/partial file claiming e.g. the
   // year 3000 must NOT disable updates indefinitely). When `now` is known, clamp
   // to now + max window. A negative/past value is harmless (shouldAttemptUpdate
   // just attempts), so only the upper bound needs clamping.
   const clampFuture = (v: number) =>
     now > 0 && v > now + DEFAULT_MAX_BACKOFF_MS ? now + DEFAULT_MAX_BACKOFF_MS : v
+
   const result = obj.lastResult
+
   return {
     lastResult: result === 'ok' || result === 'failed' || result === 'blocked' ? result : null,
     lastAttemptAt: num(obj.lastAttemptAt),

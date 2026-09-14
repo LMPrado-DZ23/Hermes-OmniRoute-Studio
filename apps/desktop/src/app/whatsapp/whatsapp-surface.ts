@@ -35,6 +35,7 @@ const STATE_MAP: Readonly<Record<string, WhatsAppUiStatus>> = {
  *  fechada — jamais assume conexão). */
 export function mapSessionState(backendState: string): WhatsAppUiStatus {
   const key = String(backendState || '').trim().toLowerCase()
+
   return STATE_MAP[key] ?? WhatsAppUiStatus.FAILED
 }
 
@@ -63,6 +64,7 @@ export interface WhatsAppStatusView {
 
 export function deriveWhatsAppView(backendState: string): WhatsAppStatusView {
   const status = mapSessionState(backendState)
+
   return {
     status,
     blocker: needsHumanQr(status) ? 'WAITING_FOR_HUMAN_QR_SCAN' : null

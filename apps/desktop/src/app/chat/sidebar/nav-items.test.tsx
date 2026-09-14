@@ -28,6 +28,7 @@ describe('SIDEBAR_NAV', () => {
 
   it('every route-backed row points at a defined app route', () => {
     const knownRoutes = new Set([AGENTS_ROUTE, SKILLS_ROUTE, MESSAGING_ROUTE, ARTIFACTS_ROUTE, CRON_ROUTE, STARMAP_ROUTE])
+
     for (const item of SIDEBAR_NAV) {
       if (item.route) {
         expect(knownRoutes.has(item.route)).toBe(true)

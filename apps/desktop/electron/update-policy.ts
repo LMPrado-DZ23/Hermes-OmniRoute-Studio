@@ -60,15 +60,19 @@ export function resolveUpdatePolicy(state: InstallState): UpdateDecision {
   if (!currentBranch || !updateBranch) {
     reasons.push('não foi possível determinar o branch atual/rastreado do checkout (estado desconhecido → manual)')
   }
+
   if (currentBranch && updateBranch && currentBranch !== updateBranch) {
     reasons.push(`checkout está no branch '${currentBranch}', mas o update rastreia '${updateBranch}'`)
   }
+
   if (state.dirty) {
     reasons.push('a working tree tem mudanças não commitadas')
   }
+
   if (Number.isFinite(state.ahead) && state.ahead > 0) {
     reasons.push(`${state.ahead} commit(s) local(is) à frente do alvo de update`)
   }
+
   if (!state.remoteIsOfficialUpstream) {
     reasons.push('a origin não é o upstream oficial do Hermes')
   }
@@ -95,14 +99,19 @@ export function resolveUpdatePolicy(state: InstallState): UpdateDecision {
  */
 export function isOfficialUpstream(originUrl: string): boolean {
   const url = (originUrl || '').trim().toLowerCase()
+
   if (!url) {
     return false
   }
+
   // normaliza git@github.com:Owner/repo.git e https://github.com/Owner/repo(.git)
   const m = url.match(/github\.com[:/]+([^/]+)\/([^/]+?)(?:\.git)?\/?$/)
+
   if (!m) {
     return false
   }
+
   const [, owner, repo] = m
+
   return owner === 'nousresearch' && repo === 'hermes-agent'
 }

@@ -287,6 +287,7 @@ test('addWorktree: base param branches off a specified local branch', async () =
 
 test('addWorktree: a base starting with "-" is rejected (no git-flag injection)', async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'hermes-base-inj-'))
+
   try {
     await ensureGitRepo('git', dir)
     await assert.rejects(

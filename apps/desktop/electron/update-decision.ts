@@ -46,16 +46,19 @@ export interface CollectResult {
 
 export async function collectInstallState(probe: InstallStateProbe): Promise<CollectResult> {
   let currentBranch: string
+
   try {
     currentBranch = (await probe.git(['rev-parse', '--abbrev-ref', 'HEAD'])).trim()
   } catch (err) {
     return { ok: false, state: null, reason: `branch read failed: ${(err as Error).message}` }
   }
+
   if (!currentBranch) {
     return { ok: false, state: null, reason: 'current branch is empty (git could not determine HEAD)' }
   }
 
   let dirty: boolean
+
   try {
     dirty = (await probe.git(['status', '--porcelain'])).trim().length > 0
   } catch (err) {
@@ -63,6 +66,7 @@ export async function collectInstallState(probe: InstallStateProbe): Promise<Col
   }
 
   let originUrl: string
+
   try {
     originUrl = (await probe.originUrl()) || ''
   } catch (err) {
@@ -70,12 +74,15 @@ export async function collectInstallState(probe: InstallStateProbe): Promise<Col
   }
 
   let ahead: number
+
   try {
     const aheadStr = (await probe.git(['rev-list', `origin/${probe.updateBranch}..HEAD`, '--count'])).trim()
+
     if (!/^\d+$/.test(aheadStr)) {
       // Ref ausente / saída não-numérica → não podemos afirmar "0 à frente".
       return { ok: false, state: null, reason: `ahead count unreadable ('${aheadStr}') — origin/${probe.updateBranch} missing?` }
     }
+
     ahead = Number(aheadStr)
   } catch (err) {
     return { ok: false, state: null, reason: `ahead read failed (origin/${probe.updateBranch} missing?): ${(err as Error).message}` }
@@ -83,6 +90,7 @@ export async function collectInstallState(probe: InstallStateProbe): Promise<Col
 
   // behind: unknown = disponível; falha vira null (seguro).
   let behind: number | null
+
   try {
     const behindStr = (await probe.git(['rev-list', `HEAD..origin/${probe.updateBranch}`, '--count'])).trim()
     behind = /^\d+$/.test(behindStr) ? Number(behindStr) : null
@@ -151,6 +159,7 @@ export function decideUpdateGate(input: GateInputs): GateResult {
 
   // AUTO permitido pela política — mas respeita o backoff persistido de falhas.
   const attempt = shouldAttemptUpdate(input.backoffState, input.now)
+
   if (!attempt.attempt) {
     return {
       action: GateAction.SKIP_BACKOFF,

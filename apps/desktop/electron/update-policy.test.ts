@@ -19,6 +19,7 @@ describe('resolveUpdatePolicy — fork guard (P0 root cause)', () => {
     const d = resolveUpdatePolicy(
       official({ currentBranch: 'feature/hermes-omniroute-studio', updateBranch: 'main', behind: 370 })
     )
+
     expect(d.policy).toBe(UpdatePolicy.MANUAL_REQUIRED)
     expect(d.autoUpdateAllowed).toBe(false)
     expect(d.reasons.join(' ')).toContain('feature/hermes-omniroute-studio')
@@ -87,6 +88,7 @@ describe('resolveUpdatePolicy — fork guard (P0 root cause)', () => {
     const d = resolveUpdatePolicy(
       official({ currentBranch: 'fork', updateBranch: 'main', dirty: true, ahead: 2, remoteIsOfficialUpstream: false })
     )
+
     expect(d.reasons.length).toBe(4)
   })
 })

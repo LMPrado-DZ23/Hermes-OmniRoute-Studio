@@ -72,6 +72,7 @@ test('default OmniRoute MCP scopes are minimal and never auto-grant privileged w
 
 test('external file policy rejects executables and sensitive files', () => {
   assert.match(String(externalFileBlockReason('C:\\Windows\\System32\\calc.exe')), /executable/i)
+
   for (const extension of [
     '.hta',
     '.wsf',
@@ -94,6 +95,7 @@ test('external file policy rejects executables and sensitive files', () => {
   ]) {
     assert.match(String(externalFileBlockReason(`C:\\Temp\\payload${extension}`)), /executable/i, extension)
   }
+
   assert.match(String(externalFileBlockReason(path.join(os.homedir(), '.ssh', 'id_rsa'))), /sensitive/i)
   assert.equal(externalFileBlockReason(path.join(os.tmpdir(), 'report.pdf')), null)
 })
@@ -166,14 +168,17 @@ test('OmniRoute server.js byte drift is blocked by the capability lock', async (
   const root = path.join(temp, 'trusted')
   const server = path.join(root, 'dist', 'open-sse', 'mcp-server', 'server.js')
   const lockPath = path.join(temp, 'capabilities.lock')
+
   try {
     fs.mkdirSync(path.dirname(server), { recursive: true })
     fs.writeFileSync(path.join(root, 'package.json'), JSON.stringify({ name: 'omniroute', version: '3.8.49' }), 'utf8')
     fs.writeFileSync(server, 'export {}', 'utf8')
+
     const serverHash = crypto
       .createHash('sha256')
       .update(fs.readFileSync(server))
       .digest('hex')
+
     fs.writeFileSync(
       lockPath,
       JSON.stringify({
@@ -228,16 +233,20 @@ const OMNIROUTE_GATEWAY_PORT = 20128
 function probeOmniRouteGateway(timeoutMs = 1000): Promise<boolean> {
   return new Promise(resolve => {
     let settled = false
+
     const finish = (ok: boolean) => {
-      if (settled) return
+      if (settled) {return}
       settled = true
+
       try {
         socket.destroy()
       } catch {
         void 0
       }
+
       resolve(ok)
     }
+
     const socket = net.connect({ host: OMNIROUTE_GATEWAY_HOST, port: OMNIROUTE_GATEWAY_PORT })
     socket.setTimeout(timeoutMs)
     socket.once('connect', () => finish(true))
@@ -254,10 +263,13 @@ test.skipIf(!HAS_OMNIROUTE_STORAGE)(
   // NOT a red failure (the product code correctly refuses an unreachable
   // gateway; there is nothing to integration-test without it).
   const gatewayUp = await probeOmniRouteGateway()
+
   if (!gatewayUp) {
     ctx.skip()
+
     return
   }
+
   const { DatabaseSync } = await import('node:sqlite')
   const databasePath = OMNIROUTE_STORAGE
   const database = new DatabaseSync(databasePath)

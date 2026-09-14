@@ -10,14 +10,16 @@
  *   - eventos de run duplicados são idempotentes (dedup por status+progress).
  */
 
-import {
+import type {
   Capability,
+  SecurityMode
+} from './types';
+import {
   type Capabilities,
   FLAT_MODES,
   MODE_CAPABILITY,
   RunStatus,
-  type SecurityError,
-  SecurityMode
+  type SecurityError
 } from './types'
 
 export enum StartDecision {
@@ -50,6 +52,7 @@ export function canTransition(from: RunStatus, to: RunStatus): boolean {
   if (from === to) {
     return true // idempotente (evento de run reentregue)
   }
+
   return ALLOWED_TRANSITIONS[from]?.has(to) ?? false
 }
 
@@ -64,20 +67,26 @@ export function decideStart(params: {
   currentStatus: RunStatus
 }): StartDecision {
   const { mode, capabilities, currentStatus } = params
+
   if (ACTIVE_STATUSES.has(currentStatus)) {
     return StartDecision.BUSY
   }
+
   if (!isFlatMode(mode)) {
     // modo exec-untrusted (fuzz/binary/exploit/…) ou desconhecido
     return StartDecision.BLOCKED_PLATFORM
   }
+
   if (!capabilities.modes.includes(mode)) {
     return StartDecision.DENIED_UNKNOWN_MODE
   }
+
   const required: Capability = MODE_CAPABILITY[mode]
+
   if (!capabilities.granted.includes(required)) {
     return StartDecision.DENIED_CAPABILITY
   }
+
   return StartDecision.ALLOW
 }
 
@@ -102,8 +111,10 @@ export function applyRunEvent(view: RunView, event: RunEvent): RunView {
   if (!canTransition(view.status, event.status)) {
     return view
   }
+
   const nextProgress = clampProgress(event.progress, view.progress, event.status)
   const next: RunView = { status: event.status, progress: nextProgress }
+
   if (event.error) {
     next.error = event.error
   } else if (event.status !== RunStatus.FAILED && event.status !== RunStatus.BLOCKED) {
@@ -112,6 +123,7 @@ export function applyRunEvent(view: RunView, event: RunEvent): RunView {
   } else {
     next.error = view.error
   }
+
   return next
 }
 
@@ -119,10 +131,13 @@ function clampProgress(incoming: number | undefined, current: number, status: Ru
   if (status === RunStatus.COMPLETED) {
     return 1
   }
+
   if (incoming === undefined || !Number.isFinite(incoming)) {
     return current
   }
+
   const bounded = Math.max(0, Math.min(1, incoming))
+
   // monotônico: reentrega/duplicado não faz a barra voltar
   return Math.max(current, bounded)
 }

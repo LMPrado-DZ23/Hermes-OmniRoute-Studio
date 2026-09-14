@@ -125,7 +125,7 @@ function raceAcquire(
   ].join('')
 
   const children = Array.from({ length: n }, () =>
-    // eslint-disable-next-line no-undef
+
     require('child_process').spawn(
       process.execPath,
       ['-e', script, modulePath, home, String(startAt), String(n), resultsDir],
@@ -134,6 +134,7 @@ function raceAcquire(
   )
 
   const outs: string[] = new Array(n).fill('')
+
   const done = children.map(
     (child, i) =>
       new Promise<void>(resolve => {
@@ -147,6 +148,7 @@ function raceAcquire(
   return Promise.all(done).then(() => {
     const winners = outs.filter(o => o.startsWith('A')).length
     let dump = ''
+
     try {
       for (const f of fs.readdirSync(resultsDir).filter(x => x.endsWith('.res'))) {
         dump += fs.readFileSync(path.join(resultsDir, f), 'utf8')
@@ -154,6 +156,7 @@ function raceAcquire(
     } catch {
       void 0
     }
+
     return { winners, dump }
   })
 }

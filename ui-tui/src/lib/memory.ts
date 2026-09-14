@@ -2,7 +2,6 @@ import { createWriteStream } from 'node:fs'
 import { mkdir, readdir, readFile, stat, unlink, writeFile } from 'node:fs/promises'
 import { homedir, tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { pipeline } from 'node:stream/promises'
 import { getHeapSnapshot, getHeapSpaceStatistics, getHeapStatistics } from 'node:v8'
 
 export type MemoryTrigger = 'auto-critical' | 'auto-high' | 'manual'
@@ -174,13 +173,33 @@ export async function performHeapDump(trigger: MemoryTrigger = 'manual'): Promis
       return { diagPath, suppressed: true, success: true }
     }
 
-    await pipeline(getHeapSnapshot(), createWriteStream(heapPath, { mode: 0o600 }))
+    await writeHeapSnapshot(heapPath)
     await pruneHeapdumps(dir).catch(() => undefined)
 
     return { diagPath, heapPath, success: true }
   } catch (e) {
     return { error: e instanceof Error ? e.message : String(e), success: false }
   }
+}
+
+/**
+ * Persist the native V8 snapshot and resolve on the writable stream's finish.
+ * Node 22's V8 snapshot stream can emit `end` while a generic promise
+ * pipeline remains unsettled, leaving callers waiting forever after the file
+ * has already been fully written. Explicit stream finalization avoids that
+ * deadlock while retaining error propagation from both sides.
+ */
+async function writeHeapSnapshot(path: string): Promise<void> {
+  const snapshot = getHeapSnapshot()
+  const output = createWriteStream(path, { mode: 0o600 })
+
+  await new Promise<void>((resolve, reject) => {
+    const fail = (error: Error) => reject(error)
+    snapshot.once('error', fail)
+    output.once('error', fail)
+    output.once('finish', resolve)
+    snapshot.pipe(output)
+  })
 }
 
 // Cap total bytes of files in `dir`, deleting oldest first. Covers both
